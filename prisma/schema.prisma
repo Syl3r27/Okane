@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model Payment {
+  id             String        @id @default(uuid())
+  idempotencyKey String        @unique
+  amount         Float
+  currency       String        @db.Char(3)
+  senderId       String
+  receiverId     String
+  description    String?
+  status         PaymentStatus @default(PENDING)
+  jobId          String        @unique
+  failureReason  String?
+  retryCount     Int           @default(0)
+  createdAt      DateTime      @default(now())
+  processedAt    DateTime?
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([status])
+  @@map("payments")
+}
