@@ -37,9 +37,12 @@ export const paymentQueueEvents = new QueueEvents(PAYMENT_QUEUE_NAME, {
  */
 
 export async function enqueuePaymentJob(data: PaymentJobData){
-    // Create payment record in database first
-    await prisma.payment.create({
-        data: {
+    // Ensure a payment record exists. Use upsert to avoid unique constraint
+    // errors if the caller already created the payment (router already does).
+    await prisma.payment.upsert({
+        where: { id: data.paymentId },
+        update: {},
+        create: {
             id: data.paymentId,
             idempotencyKey: data.idempotencyKey,
             amount: data.amount,
@@ -53,5 +56,5 @@ export async function enqueuePaymentJob(data: PaymentJobData){
 
     return paymentQueue.add(PAYMENT_QUEUE_NAME, data, {
         jobId: data.paymentId,
-    })
+    });
 }
