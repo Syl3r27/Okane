@@ -33,8 +33,12 @@ async function simulatePaymentProcessing(): Promise<PaymentJobResult> {
   return { success: true, processedAt: new Date().toISOString() };
 }
 
-async function processPaymentJob(job: Job<PaymentJobData>): Promise<PaymentJobResult> {
+export async function processPaymentJob(
+  job: Job<PaymentJobData, any, string>,
+  simulate?: () => Promise<PaymentJobResult>
+): Promise<PaymentJobResult> {
   const { paymentId } = job.data;
+  const simulateFn = simulate ?? simulatePaymentProcessing;
 
   const existing = await prisma.payment.findUnique({ where: { id: paymentId } });
 
@@ -62,7 +66,7 @@ async function processPaymentJob(job: Job<PaymentJobData>): Promise<PaymentJobRe
 
   log('job.processing', { paymentId, jobId: job.id, attempt: job.attemptsMade + 1 });
 
-  const result = await simulatePaymentProcessing();
+  const result = await simulateFn();
 
   if (!result.success) {
     throw new Error(result.failureReason);
@@ -72,7 +76,7 @@ async function processPaymentJob(job: Job<PaymentJobData>): Promise<PaymentJobRe
 }
 export const paymentWorker = new Worker<PaymentJobData, PaymentJobResult>(
   PAYMENT_QUEUE_NAME,
-  processPaymentJob,
+  (job) => processPaymentJob(job),
   {
     connection: bullMQConnectOptions,
     concurrency: config.worker.concurrency,

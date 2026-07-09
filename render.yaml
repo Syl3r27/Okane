@@ -1,0 +1,70 @@
+databases:
+  - name: okane-db
+    plan: free
+    region: oregon
+
+services:
+  - type: keyvalue
+    name: okane-redis
+    plan: free
+    maxmemoryPolicy: noeviction
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: everywhere
+
+  - type: web
+    name: okane-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerCommand: sh -c "npx prisma migrate deploy && node dist/index.js"
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: okane-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: okane-redis
+          property: connectionString
+      - key: WORKER_CONCURRENCY
+        value: 5
+      - key: MAX_JOB_RETRIES
+        value: 3
+      - key: BACKOFF_BASE_DELAY_MS
+        value: 1000
+      - key: IDEMPOTENCY_TTL_SECONDS
+        value: 86400
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 60000
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: 10
+
+  - type: worker
+    name: okane-worker
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerCommand: node dist/workers/payment.worker.js
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: okane-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: okane-redis
+          property: connectionString
+      - key: WORKER_CONCURRENCY
+        value: 5
+      - key: MAX_JOB_RETRIES
+        value: 3
+      - key: BACKOFF_BASE_DELAY_MS
+        value: 1000

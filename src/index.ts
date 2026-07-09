@@ -1,16 +1,8 @@
-import express from 'express';
-import { Server } from 'http';
+﻿import { Server } from 'http';
 import { config } from './config';
-import apiRouter from './router';
-import { errorHandler } from './middleware/errorHandler';
+import { app } from './app';
 import { disconnectPrisma } from './db/client';
 import { disconnectRedis } from './db/redis';
-
-const app = express();
-
-app.use(express.json());
-app.use('/', apiRouter);
-app.use(errorHandler);
 
 const server: Server = app.listen(config.port, () => {
   console.log(`Okane API listening on port ${config.port} [${config.env}]`);
@@ -21,7 +13,7 @@ const FORCE_EXIT_TIMEOUT_MS = 10_000;
 let shuttingDown = false;
 
 async function shutdown(signal: string) {
-  if (shuttingDown) return; // ignore repeat signals mid-shutdown
+  if (shuttingDown) return;
   shuttingDown = true;
 
   console.log(JSON.stringify({
@@ -38,10 +30,9 @@ async function shutdown(signal: string) {
     }));
     process.exit(1);
   }, FORCE_EXIT_TIMEOUT_MS);
-  forceExitTimer.unref(); // don't let this timer itself keep the process alive
+  forceExitTimer.unref();
 
   try {
-    // Stop accepting new connections; resolves once existing ones finish
     await new Promise<void>((resolve, reject) => {
       server.close((err) => (err ? reject(err) : resolve()));
     });

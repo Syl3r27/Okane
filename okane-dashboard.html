@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Okane — Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #14213D;
+    --ink-soft: #253656;
+    --paper: #EFEAE0;
+    --paper-raised: #F7F4EC;
+    --line: #D8D0BE;
+    --brass: #B8935F;
+    --brass-dark: #8C6D42;
+    --text: #1C1A16;
+    --text-muted: #6B6558;
+    --green: #2F5233;
+    --red: #8B2E2E;
+    --amber: #8A5E10;
+    --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
+    --stamp: 'Special Elite', 'Courier New', monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  ::selection { background: var(--brass); color: var(--paper); }
+
+  :focus-visible {
+    outline: 2px solid var(--brass-dark);
+    outline-offset: 2px;
+  }
+
+  header.masthead {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 20px 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 16px;
+    border-bottom: 3px solid var(--brass);
+  }
+
+  .wordmark {
+    font-family: var(--stamp);
+    font-size: 28px;
+    letter-spacing: 4px;
+    margin: 0;
+  }
+  .wordmark span { color: var(--brass); }
+
+  .tagline {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #A8A0B8;
+    margin: 2px 0 0;
+  }
+
+  .health-strip {
+    display: flex;
+    gap: 18px;
+    align-items: center;
+    font-size: 12px;
+  }
+
+  .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    display: inline-block;
+    background: #666;
+    box-shadow: 0 0 0 rgba(0,0,0,0);
+  }
+  .dot.up { background: #4B8A5F; box-shadow: 0 0 6px #4B8A5F88; }
+  .dot.down { background: #B4453D; box-shadow: 0 0 6px #B4453D88; }
+
+  .conn-item { display: flex; align-items: center; gap: 6px; }
+
+  .queue-chips { display: flex; gap: 10px; }
+  .qchip { text-align: center; }
+  .qchip b { display: block; font-size: 14px; }
+  .qchip small { color: #A8A0B8; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; }
+
+  .banner {
+    background: #F3D9D5;
+    color: var(--red);
+    border-bottom: 1px solid var(--red);
+    padding: 10px 28px;
+    font-size: 12px;
+    display: none;
+  }
+  .banner.show { display: block; }
+
+  main {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 0;
+    align-items: start;
+  }
+  @media (max-width: 880px) {
+    main { grid-template-columns: 1fr; }
+  }
+
+  section.panel {
+    padding: 24px;
+    border-right: 1px solid var(--line);
+    min-height: 60vh;
+  }
+  main > section.ledger-panel { border-right: none; }
+
+  h2.panel-title {
+    font-family: var(--stamp);
+    font-size: 13px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin: 0 0 18px;
+    color: var(--ink-soft);
+    border-bottom: 1px dashed var(--line);
+    padding-bottom: 8px;
+  }
+
+  label {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 14px 0 4px;
+  }
+  label:first-of-type { margin-top: 0; }
+
+  input, select {
+    width: 100%;
+    padding: 8px 10px;
+    font-family: var(--mono);
+    font-size: 13px;
+    border: 1px solid var(--line);
+    background: var(--paper-raised);
+    color: var(--text);
+    border-radius: 2px;
+  }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .key-row { display: flex; gap: 6px; }
+  .key-row input { flex: 1; font-size: 11px; }
+  .icon-btn {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    cursor: pointer;
+    font-size: 13px;
+    padding: 0 10px;
+    border-radius: 2px;
+  }
+  .icon-btn:hover { border-color: var(--brass-dark); }
+
+  button.primary {
+    width: 100%;
+    margin-top: 18px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 12px;
+    font-family: var(--stamp);
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 2px;
+  }
+  button.primary:hover { background: var(--ink-soft); }
+  button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .test-block {
+    margin-top: 28px;
+    padding-top: 18px;
+    border-top: 1px dashed var(--line);
+  }
+  .test-block button {
+    width: 100%;
+    margin-bottom: 8px;
+    background: var(--paper-raised);
+    border: 1px solid var(--brass);
+    color: var(--brass-dark);
+    padding: 9px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 2px;
+  }
+  .test-block button:hover { background: #E4DBC6; }
+
+  .error-inline {
+    font-size: 11px;
+    color: var(--red);
+    margin-top: 10px;
+    display: none;
+  }
+  .error-inline.show { display: block; }
+
+  /* --- Ledger --- */
+  .ledger-panel { border-right: none; }
+  .ledger-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+  .ledger-toolbar button {
+    background: none; border: 1px solid var(--line); color: var(--text-muted);
+    font-family: var(--mono); font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+    padding: 6px 10px; cursor: pointer; border-radius: 2px;
+  }
+
+  .ledger-empty {
+    color: var(--text-muted);
+    font-size: 12px;
+    padding: 40px 0;
+    text-align: center;
+    border: 1px dashed var(--line);
+  }
+
+  .receipt {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .receipt-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .receipt-id { font-size: 11px; color: var(--text-muted); }
+  .receipt-amount { font-size: 16px; font-weight: 600; }
+
+  .receipt-route { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+  .receipt-route b { color: var(--text); font-weight: 500; }
+
+  .receipt-meta { display: flex; gap: 14px; margin-top: 8px; font-size: 10px; color: var(--text-muted); }
+
+  .pill {
+    display: inline-block;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 10px;
+    border: 1px solid currentColor;
+  }
+  .pill.pending { color: var(--amber); }
+  .pill.processing { color: var(--ink-soft); }
+  .pill.processing::before {
+    content: ''; display: inline-block; width: 5px; height: 5px; border-radius: 50%;
+    background: currentColor; margin-right: 5px; animation: pulse 1s infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+  .stamp {
+    position: absolute;
+    top: 8px; right: 14px;
+    font-family: var(--stamp);
+    font-size: 15px;
+    letter-spacing: 2px;
+    padding: 4px 10px;
+    border: 3px double currentColor;
+    border-radius: 4px;
+    transform: rotate(-8deg) scale(1);
+    opacity: 0.85;
+    mix-blend-mode: multiply;
+    animation: stamp-in 220ms ease-out;
+  }
+  .stamp.completed { color: var(--green); }
+  .stamp.failed { color: var(--red); }
+  @keyframes stamp-in {
+    0% { transform: rotate(-8deg) scale(1.6); opacity: 0; }
+    100% { transform: rotate(-8deg) scale(1); opacity: 0.85; }
+  }
+
+  .receipt-reason { font-size: 10px; color: var(--red); margin-top: 6px; }
+
+  /* --- Test results --- */
+  .test-results {
+    margin-top: 16px;
+    font-size: 11px;
+  }
+  .chip-strip { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chip {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 2px;
+    border: 1px solid var(--line);
+  }
+  .chip.ok { border-color: var(--green); color: var(--green); }
+  .chip.blocked { border-color: var(--red); color: var(--red); background: #F3D9D5; }
+
+  .idem-compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 10px;
+  }
+  .idem-compare pre { margin: 0; background: var(--ink); color: #C9E5D0; padding: 8px; border-radius: 2px; overflow-x: auto; }
+
+  /* --- JSON panel --- */
+  .json-panel {
+    grid-column: 1 / -1;
+    padding: 18px 28px 28px;
+    border-top: 1px solid var(--line);
+  }
+  pre#raw-json {
+    background: var(--ink);
+    color: #D8E8C8;
+    padding: 16px;
+    border-radius: 3px;
+    font-size: 12px;
+    overflow-x: auto;
+    margin: 0;
+    max-height: 260px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .stamp { animation: none; }
+    .pill.processing::before { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div>
+    <p class="wordmark">OKANE<span>.</span></p>
+    <p class="tagline">Async payment ledger — live simulator</p>
+  </div>
+  <div class="health-strip">
+    <span class="conn-item"><span class="dot" id="dot-pg"></span> POSTGRES</span>
+    <span class="conn-item"><span class="dot" id="dot-redis"></span> REDIS</span>
+    <div class="queue-chips" id="queue-chips">
+      <div class="qchip"><b>–</b><small>Wait</small></div>
+      <div class="qchip"><b>–</b><small>Active</small></div>
+      <div class="qchip"><b>–</b><small>Done</small></div>
+      <div class="qchip"><b>–</b><small>Failed</small></div>
+      <div class="qchip"><b>–</b><small>Delay</small></div>
+    </div>
+  </div>
+</header>
+
+<div class="banner" id="conn-banner">
+  Can't reach the API. Confirm the server is running and the base URL below is correct, and that CORS is enabled (see chat for the snippet).
+</div>
+
+<main>
+  <section class="panel">
+    <h2 class="panel-title">Terminal</h2>
+
+    <label for="base-url">API base URL</label>
+    <input id="base-url" value="http://localhost:3000">
+
+    <div class="row2">
+      <div>
+        <label for="amount">Amount</label>
+        <input id="amount" type="number" step="0.01" min="0.01" value="1500.00">
+      </div>
+      <div>
+        <label for="currency">Currency</label>
+        <select id="currency">
+          <option>INR</option><option>USD</option><option>EUR</option><option>GBP</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row2">
+      <div>
+        <label for="senderId">Sender ID</label>
+        <input id="senderId" value="user_001">
+      </div>
+      <div>
+        <label for="receiverId">Receiver ID</label>
+        <input id="receiverId" value="user_002">
+      </div>
+    </div>
+
+    <label for="description">Description</label>
+    <input id="description" value="Rent for June">
+
+    <label for="userId">X-User-Id</label>
+    <input id="userId" value="demo-user">
+
+    <label for="idemKey">Idempotency-Key</label>
+    <div class="key-row">
+      <input id="idemKey" readonly>
+      <button class="icon-btn" id="regen-key" title="Generate new key" type="button">↻</button>
+    </div>
+
+    <button class="primary" id="submit-btn" type="button">Submit Payment</button>
+    <p class="error-inline" id="submit-error"></p>
+
+    <div class="test-block">
+      <button id="idem-test" type="button">Replay same key ×2</button>
+      <button id="burst-test" type="button">Burst 12 requests (rate limit)</button>
+      <div class="test-results" id="test-results"></div>
+    </div>
+  </section>
+
+  <section class="panel ledger-panel">
+    <div class="ledger-toolbar">
+      <h2 class="panel-title" style="margin:0; border:none; padding:0;">Ledger</h2>
+      <button id="clear-ledger" type="button">Clear view</button>
+    </div>
+    <div id="ledger-list">
+      <div class="ledger-empty" id="ledger-empty">No entries yet — submit a payment to open the ledger.</div>
+    </div>
+  </section>
+
+  <section class="json-panel">
+    <h2 class="panel-title">Last response</h2>
+    <pre id="raw-json">—</pre>
+  </section>
+</main>
+
+<script>
+  const state = { payments: {}, timers: {} };
+  const $ = (id) => document.getElementById(id);
+
+  function baseUrl() { return $('base-url').value.replace(/\/$/, ''); }
+  function genKey() { return (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random()); }
+  $('idemKey').value = genKey();
+  $('regen-key').addEventListener('click', () => { $('idemKey').value = genKey(); });
+
+  function showRaw(obj) {
+    $('raw-json').textContent = typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2);
+  }
+
+  function setConnBanner(show) {
+    $('conn-banner').classList.toggle('show', show);
+  }
+
+  async function apiFetch(path, { method = 'GET', headers = {}, body } = {}) {
+    const res = await fetch(baseUrl() + path, {
+      method,
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    let json = null;
+    try { json = await res.json(); } catch (_) { /* no body */ }
+    return {
+      status: res.status,
+      headers: {
+        limit: res.headers.get('X-RateLimit-Limit'),
+        remaining: res.headers.get('X-RateLimit-Remaining'),
+        reset: res.headers.get('X-RateLimit-Reset'),
+        retryAfter: res.headers.get('Retry-After'),
+        replay: res.headers.get('X-Idempotent-Replay'),
+      },
+      body: json,
+    };
+  }
+
+  // ---------- Health polling ----------
+  async function pollHealth() {
+    try {
+      const res = await fetch(baseUrl() + '/health');
+      const data = await res.json();
+      setConnBanner(false);
+      $('dot-pg').className = 'dot ' + (data.connectivity?.postgres === 'connected' ? 'up' : 'down');
+      $('dot-redis').className = 'dot ' + (data.connectivity?.redis === 'connected' ? 'up' : 'down');
+      const q = data.queue || {};
+      const chips = $('queue-chips').children;
+      const order = ['waiting', 'active', 'completed', 'failed', 'delayed'];
+      order.forEach((key, i) => {
+        chips[i].querySelector('b').textContent = (q[key] ?? '–');
+      });
+    } catch (err) {
+      setConnBanner(true);
+      $('dot-pg').className = 'dot down';
+      $('dot-redis').className = 'dot down';
+    }
+  }
+  pollHealth();
+  setInterval(pollHealth, 3000);
+
+  // ---------- Ledger rendering ----------
+  function ensureRow(id) {
+    let el = document.getElementById('receipt-' + id);
+    if (!el) {
+      $('ledger-empty').style.display = 'none';
+      el = document.createElement('div');
+      el.className = 'receipt';
+      el.id = 'receipt-' + id;
+      $('ledger-list').prepend(el);
+    }
+    return el;
+  }
+
+  function renderRow(payment) {
+    const el = ensureRow(payment.paymentId);
+    const statusLower = (payment.status || 'pending').toLowerCase();
+    const isTerminal = statusLower === 'completed' || statusLower === 'failed';
+
+    let pillHtml = '';
+    let stampHtml = '';
+    if (isTerminal) {
+      stampHtml = `<div class="stamp ${statusLower}">${statusLower === 'completed' ? 'COMPLETED' : 'DECLINED'}</div>`;
+    } else {
+      pillHtml = `<span class="pill ${statusLower}">${payment.status}</span>`;
+    }
+
+    el.innerHTML = `
+      ${stampHtml}
+      <div class="receipt-top">
+        <span class="receipt-id">#${payment.paymentId.slice(0, 8)}</span>
+        <span class="receipt-amount">${Number(payment.amount).toFixed(2)} ${payment.currency}</span>
+      </div>
+      <div class="receipt-route"><b>${payment.senderId}</b> → <b>${payment.receiverId}</b></div>
+      <div class="receipt-meta">
+        <span>${pillHtml}</span>
+        <span>retries: ${payment.retryCount ?? 0}</span>
+        <span>${payment.createdAt ? new Date(payment.createdAt).toLocaleTimeString() : ''}</span>
+      </div>
+      ${payment.failureReason ? `<div class="receipt-reason">⚠ ${payment.failureReason}</div>` : ''}
+    `;
+  }
+
+  function stopPolling(id) {
+    if (state.timers[id]) {
+      clearInterval(state.timers[id]);
+      delete state.timers[id];
+    }
+  }
+
+  function startPolling(id, userId) {
+    stopPolling(id);
+    state.timers[id] = setInterval(async () => {
+      try {
+        const res = await apiFetch('/payments/' + id, { headers: { 'X-User-Id': userId } });
+        if (res.status === 200 && res.body) {
+          state.payments[id] = res.body;
+          renderRow(res.body);
+          if (res.body.status === 'COMPLETED' || res.body.status === 'FAILED') {
+            stopPolling(id);
+          }
+        } else if (res.status === 404) {
+          stopPolling(id);
+        }
+      } catch (_) {
+        stopPolling(id);
+      }
+    }, 1000);
+  }
+
+  // ---------- Submit payment ----------
+  $('submit-btn').addEventListener('click', async () => {
+    const btn = $('submit-btn');
+    $('submit-error').classList.remove('show');
+    btn.disabled = true;
+    try {
+      const userId = $('userId').value.trim();
+      const idemKey = $('idemKey').value;
+      const payload = {
+        amount: parseFloat($('amount').value),
+        currency: $('currency').value,
+        senderId: $('senderId').value.trim(),
+        receiverId: $('receiverId').value.trim(),
+        description: $('description').value.trim() || undefined,
+      };
+
+      const res = await apiFetch('/payments', {
+        method: 'POST',
+        headers: { 'X-User-Id': userId, 'Idempotency-Key': idemKey },
+        body: payload,
+      });
+
+      showRaw({ status: res.status, rateLimit: res.headers, body: res.body });
+
+      if (res.status === 202 && res.body?.paymentId) {
+        const id = res.body.paymentId;
+        state.payments[id] = { ...payload, ...res.body };
+        renderRow(state.payments[id]);
+        startPolling(id, userId);
+        $('idemKey').value = genKey(); // fresh key for the next distinct payment
+      } else {
+        $('submit-error').textContent = res.body?.error?.message || `Request failed (${res.status})`;
+        $('submit-error').classList.add('show');
+      }
+    } catch (err) {
+      $('submit-error').textContent = 'Network error — is the API reachable? ' + err.message;
+      $('submit-error').classList.add('show');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  $('clear-ledger').addEventListener('click', () => {
+    Object.keys(state.timers).forEach(stopPolling);
+    state.payments = {};
+    $('ledger-list').innerHTML = '<div class="ledger-empty" id="ledger-empty">No entries yet — submit a payment to open the ledger.</div>';
+  });
+
+  // ---------- Idempotency replay test ----------
+  $('idem-test').addEventListener('click', async () => {
+    const userId = $('userId').value.trim();
+    const key = genKey();
+    const payload = {
+      amount: 250.00, currency: 'INR', senderId: 'idem_test_a', receiverId: 'idem_test_b',
+      description: 'Idempotency replay test',
+    };
+    const [first, second] = await Promise.all([
+      apiFetch('/payments', { method: 'POST', headers: { 'X-User-Id': userId, 'Idempotency-Key': key }, body: payload }),
+      apiFetch('/payments', { method: 'POST', headers: { 'X-User-Id': userId, 'Idempotency-Key': key }, body: payload }),
+    ]);
+    $('test-results').innerHTML = `
+      <div>Both requests sent with the same Idempotency-Key. Expect identical <b>paymentId</b> and one marked as a replay:</div>
+      <div class="idem-compare">
+        <pre>REQUEST A
+status: ${first.status}
+replay: ${first.headers.replay || 'false'}
+paymentId: ${first.body?.paymentId}</pre>
+        <pre>REQUEST B
+status: ${second.status}
+replay: ${second.headers.replay || 'false'}
+paymentId: ${second.body?.paymentId}</pre>
+      </div>
+    `;
+    showRaw({ requestA: first, requestB: second });
+    if (first.body?.paymentId) {
+      state.payments[first.body.paymentId] = { ...payload, ...first.body };
+      renderRow(state.payments[first.body.paymentId]);
+      startPolling(first.body.paymentId, userId);
+    }
+  });
+
+  // ---------- Rate limit burst test ----------
+  $('burst-test').addEventListener('click', async () => {
+    const burstUser = 'burst-' + Date.now();
+    $('test-results').innerHTML = '<div>Firing 12 requests from a fresh synthetic user…</div>';
+    const results = [];
+    for (let i = 0; i < 12; i++) {
+      const res = await apiFetch('/payments', {
+        method: 'POST',
+        headers: { 'X-User-Id': burstUser, 'Idempotency-Key': genKey() },
+        body: { amount: 10, currency: 'INR', senderId: 'burst_a', receiverId: 'burst_b' },
+      });
+      results.push(res);
+    }
+    const chips = results.map((r, i) =>
+      `<span class="chip ${r.status === 202 ? 'ok' : 'blocked'}">#${i + 1}: ${r.status}</span>`
+    ).join('');
+    const last = results[results.length - 1];
+    $('test-results').innerHTML = `
+      <div>10 should succeed (202), the rest blocked (429) — user: <b>${burstUser}</b></div>
+      <div class="chip-strip">${chips}</div>
+      <div style="margin-top:8px;">Last response headers — limit: ${last.headers.limit ?? '—'},
+      remaining: ${last.headers.remaining ?? '—'}, retry-after: ${last.headers.retryAfter ?? '—'}</div>
+    `;
+    showRaw(results);
+  });
+</script>
+</body>
+</html>
