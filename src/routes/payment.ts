@@ -86,7 +86,7 @@ router.post(
       throw new Error('Payment could not be queued for processing');
     }
 
-    res.status(202).json({
+    return res.status(202).json({
       paymentId: payment.id,
       jobId: payment.jobId,
       status: payment.status,

@@ -25,7 +25,7 @@ async function checkRedis(): Promise<boolean> {
   }
 }
 
-router.get('/', async (req, res) => {
+router.get('/', async (_req, res) => {
   const [postgresUp, redisUp] = await Promise.all([checkPostgres(), checkRedis()]);
 
   let queueCounts: Record<string, number> | null = null;

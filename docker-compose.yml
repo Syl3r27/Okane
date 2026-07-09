@@ -4,8 +4,8 @@ services:
     image: postgres:16
     container_name: okane_postgres
     environment:
-      POSTGRES_USER: okane_user
-      POSTGRES_PASSWORD: okane_pass
+      POSTGRES_USER: okane
+      POSTGRES_PASSWORD: okane
       POSTGRES_DB: okane_db
     ports:
       - "5432:5432"
@@ -39,7 +39,7 @@ volumes:
     build: .
     command: npx prisma migrate deploy
     environment:
-      DATABASE_URL: postgresql://okane:okane@postgres:5432/okane
+      DATABASE_URL: postgresql://okane:okane@postgres:5432/okane_db
     depends_on:
       postgres:
         condition: service_healthy
@@ -52,7 +52,7 @@ volumes:
       - "3000:3000"
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://okane:okane@postgres:5432/okane
+      DATABASE_URL: postgresql://okane:okane@postgres:5432/okane_db
       REDIS_URL: redis://redis:6379
       WORKER_CONCURRENCY: 5
       MAX_JOB_RETRIES: 3
@@ -76,7 +76,7 @@ volumes:
     command: node dist/workers/payment.worker.js
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://okane:okane@postgres:5432/okane
+      DATABASE_URL: postgresql://okane:okane@postgres:5432/okane_db
       REDIS_URL: redis://redis:6379
       WORKER_CONCURRENCY: 5
       MAX_JOB_RETRIES: 3

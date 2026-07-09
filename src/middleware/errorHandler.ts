@@ -37,10 +37,9 @@ export class PaymentNotFoundError extends AppError {
 
 export function errorHandler(
   err: Error,
-  req: Request,
+  _req: Request,
   res: Response,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  next: NextFunction
+  _next: NextFunction
 ) {
   if (err instanceof AppError) {
     return res.status(err.statusCode).json({
